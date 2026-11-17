@@ -1,6 +1,16 @@
 from flask import Flask, flash, render_template, request, redirect, url_for, jsonify, session, Markup
 from datetime import datetime
-from static.converter import excel_to_json
+import pandas as pd
+
+def excel_to_json(excel_file):
+    try:
+        excel_data = pd.read_excel(excel_file, sheet_name=None)
+        json_data = {}
+        for sheet_name, sheet_data in excel_data.items():
+            json_data[sheet_name] = json.loads(sheet_data.to_json(orient='records'))
+        return json_data
+    except Exception:
+        return {}
 import os
 import math
 import json
