@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>MVN University - Classrooms Confirmed</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+    <style>
+      body { background-color: #f1f5f9; font-family: 'Segoe UI', Arial, sans-serif; color: #0f172a; }
+      .mvn-header { background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%); color: #ffffff; padding: 1.25rem 0; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+      .success-card { background: #ffffff; border-radius: 12px; border: 2px solid #86efac; box-shadow: 0 4px 16px rgba(21, 128, 61, 0.1); padding: 2rem; margin-bottom: 2rem; }
+      .room-badge-card { background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 0.65rem 0.85rem; display: flex; align-items: center; justify-content: space-between; }
+    </style>
+  </head>
+  <body>
+    <div class="mvn-header mb-4">
+      <div class="container d-flex justify-content-between align-items-center">
+        <div>
+          <h4 class="fw-bold mb-0">🏛️ MVN UNIVERSITY</h4>
+          <small class="text-light opacity-90 fw-semibold">Examination Hall & Classroom Allocator</small>
+        </div>
+        <div>
+          <a href="/admin" class="btn btn-light btn-sm fw-semibold shadow-sm"><i class="bi bi-house-door-fill me-1"></i> Admin Dashboard</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container pb-5">
+      <div class="success-card text-center">
+        <div class="mb-3">
+          <i class="bi bi-check-circle-fill text-success" style="font-size: 3.5rem;"></i>
+        </div>
+        <h2 class="fw-bold text-dark mb-2">Classrooms Confirmed Successfully!</h2>
+        <p class="text-muted fs-5 mb-4">
+          All selected examination halls (Block 1 to 7) have been saved and locked for seating generation.
+        </p>
+        <div class="d-flex justify-content-center gap-3 flex-wrap">
+          <a href="/seating" class="btn btn-success btn-lg px-4 fw-bold shadow">
+            <i class="bi bi-play-circle-fill me-2"></i> Proceed to Card 4: Generate Seating
+          </a>
+          <a href="/admin" class="btn btn-outline-primary btn-lg px-4 fw-bold">
+            <i class="bi bi-arrow-left-circle me-2"></i> Go to Admin Dashboard
+          </a>
+        </div>
+      </div>
+
+      <div class="card p-4 border-0 shadow-sm rounded-3">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-door-open-fill text-primary me-2"></i> Confirmed Examination Halls</h5>
+          <span class="badge bg-primary fs-6 px-3 py-2">42 Halls Ready</span>
+        </div>
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+          {% for b in range(1, 8) %}
+            {% for r in range(1, 7) %}
+            <div class="col">
+              <div class="room-badge-card">
+                <span class="fw-bold text-dark"><i class="bi bi-check2 text-success me-1"></i> Block {{ b }} - Room {{ 100 + r }}</span>
+                <span class="badge bg-light text-muted border">42 Seats</span>
+              </div>
+            </div>
+            {% endfor %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

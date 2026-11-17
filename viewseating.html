@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MVN University - Seating Arrangement & Hall Plan</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+    <style>
+      body {
+        background-color: #f1f5f9;
+        font-family: 'Segoe UI', Arial, sans-serif;
+        color: #0f172a;
+      }
+      .mvn-header {
+        background: linear-gradient(135deg, #0d47a1 0%, #1565c0 100%);
+        color: #ffffff;
+        padding: 1.25rem 0;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      }
+      .hall-card {
+        background: #ffffff;
+        border-radius: 10px;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+        margin-bottom: 2.5rem;
+        overflow: hidden;
+        border: 2px solid #cbd5e1;
+      }
+      .hall-card-header {
+        background: #0d47a1;
+        color: #ffffff;
+        padding: 1rem 1.25rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      /* Clean High-Contrast Table Styling */
+      .seating-table {
+        margin-bottom: 0;
+        border-collapse: collapse;
+      }
+      .seating-table thead th {
+        background-color: #0f172a !important;
+        color: #ffffff !important;
+        font-weight: 700;
+        font-size: 0.95rem;
+        text-align: center;
+        vertical-align: middle;
+        padding: 12px 8px;
+        border: 1px solid #334155 !important;
+        letter-spacing: 0.3px;
+      }
+      .seating-table tbody td {
+        border: 1px solid #cbd5e1 !important;
+        vertical-align: middle;
+        text-align: center;
+        padding: 9px 8px;
+        background-color: #ffffff;
+      }
+      .seating-table tbody tr:nth-child(even) td {
+        background-color: #f8fafc;
+      }
+      .seat-pill-a {
+        display: inline-block;
+        background-color: #eff6ff;
+        color: #1d4ed8;
+        border: 1.5px solid #93c5fd;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 3px 12px;
+        border-radius: 6px;
+      }
+      .seat-pill-b {
+        display: inline-block;
+        background-color: #f0fdf4;
+        color: #15803d;
+        border: 1.5px solid #86efac;
+        font-weight: 800;
+        font-size: 0.95rem;
+        padding: 3px 12px;
+        border-radius: 6px;
+      }
+      .roll-bold {
+        font-weight: 800;
+        font-size: 1.05rem;
+        color: #000000 !important;
+        font-family: 'Consolas', 'Courier New', monospace;
+        letter-spacing: 0.5px;
+      }
+      .date-btn.active {
+        background-color: #0d47a1 !important;
+        color: #ffffff !important;
+        border-color: #0d47a1 !important;
+      }
+      @media print {
+        .no-print { display: none !important; }
+        body { background: #ffffff; }
+        .hall-card {
+          page-break-after: always;
+          box-shadow: none;
+          border: 2px solid #000000;
+          margin-bottom: 20px;
+        }
+        .seating-table thead th {
+          background-color: #000000 !important;
+          color: #ffffff !important;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Top Header -->
+    <div class="mvn-header mb-4 no-print">
+      <div class="container d-flex flex-wrap justify-content-between align-items-center">
+        <div>
+          <h3 class="fw-bold mb-0">🏛️ MVN UNIVERSITY</h3>
+          <small class="text-light opacity-90 fw-semibold">Exam Hall & Seating Auto-Allocator | Examination Door Charts</small>
+        </div>
+        <div class="mt-2 mt-md-0 d-flex gap-2">
+          <button onclick="window.print()" class="btn btn-warning btn-sm fw-bold shadow-sm">
+            <i class="bi bi-printer-fill me-1"></i> Print All Charts
+          </button>
+          <a href="/admin" class="btn btn-light btn-sm fw-semibold shadow-sm">
+            <i class="bi bi-house-door-fill me-1"></i> Home / Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <div class="container py-2">
+      <!-- Session Selector Card -->
+      <div class="card p-3 shadow-sm border-0 mb-4 no-print">
+        <h5 class="fw-bold text-dark mb-2">
+          <i class="bi bi-calendar3-event text-primary me-2"></i> Select Examination Session / Date:
+        </h5>
+        <div id="buttons" class="d-flex flex-wrap gap-2 pt-2"></div>
+      </div>
+
+      <!-- Active Session Badge -->
+      <div id="selectedDateDisplay" class="d-none mb-3 d-flex justify-content-between align-items-center">
+        <h4 class="fw-bold text-primary mb-0">
+          <i class="bi bi-clipboard2-check-fill me-2"></i> Room Seating Plan: 
+          <span id="currentDateText" class="badge bg-primary px-3 py-2 fs-6"></span>
+        </h4>
+        <span class="badge bg-secondary fw-semibold no-print">Alternating Seating (Col A & B)</span>
+      </div>
+
+      <!-- Tables / Room Charts Container -->
+      <div id="tables">
+        <div class="text-center py-5 text-muted">
+          <h5>Loading room charts...</h5>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      var dates = {{ dates|safe }};
+      var buttonsContainer = document.getElementById('buttons');
+      var tablesContainer = document.getElementById('tables');
+      var dateDisplay = document.getElementById('selectedDateDisplay');
+      var currentDateText = document.getElementById('currentDateText');
+
+      if (!dates || dates.length === 0) {
+        dates = ['None'];
+      }
+
+      // Create buttons for each date
+      for (var i = 0; i < dates.length; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'btn btn-outline-primary fw-bold date-btn px-3 py-2';
+        var displayDate = (dates[i] === 'None' || !dates[i] || dates[i] === 'null') 
+                          ? '📋 Current Exam Session' 
+                          : ('📅 Exam Date: ' + dates[i]);
+        btn.innerHTML = displayDate;
+        btn.setAttribute('data-date', dates[i]);
+        btn.setAttribute('data-display', displayDate);
+        btn.addEventListener('click', function() {
+          var allBtns = document.querySelectorAll('.date-btn');
+          allBtns.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          loadTable(this.getAttribute('data-date'), this.getAttribute('data-display'));
+        });
+        buttonsContainer.appendChild(btn);
+      }
+
+      // Auto load first date
+      if (buttonsContainer.firstChild) {
+        buttonsContainer.firstChild.click();
+      }
+
+      function loadTable(dateName, labelText) {
+        var cleanLabel = labelText || ((dateName === 'None' || !dateName || dateName === 'null') ? 'Current Exam Session' : ('Exam Date: ' + dateName));
+        dateDisplay.classList.remove('d-none');
+        currentDateText.innerText = cleanLabel;
+        tablesContainer.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="mt-2 text-muted">Loading seating chart...</p></div>';
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '/viewseating/' + encodeURIComponent(dateName), true);
+        xhr.onload = function() {
+          if (xhr.status == 200) {
+            try {
+              var json = JSON.parse(xhr.responseText);
+              var out = '';
+              var roomCount = 0;
+
+              for (var i = 0; i < json.length; i++) {
+                var classData = json[i];
+                var aCount = (classData.a && classData.a.length) ? classData.a.length : 0;
+                var bCount = (classData.b && classData.b.length) ? classData.b.length : 0;
+                var totalSeats = aCount + bCount;
+
+                if (totalSeats > 0) {
+                  roomCount++;
+                  var maxRows = Math.max(aCount, bCount);
+
+                  out += '<div class="hall-card">';
+                  out += '  <div class="hall-card-header">';
+                  out += '    <div>';
+                  out += '      <h5 class="mb-0 fw-bold"><i class="bi bi-door-open-fill me-2"></i> Examination Hall: ' + classData.class_name + '</h5>';
+                  out += '      <small class="opacity-90">Session: ' + cleanLabel + ' | Total Allotted: ' + totalSeats + ' (Col A: ' + aCount + ', Col B: ' + bCount + ')</small>';
+                  out += '    </div>';
+                  out += '    <span class="badge bg-light text-dark px-3 py-2 fw-bold">Room Capacity: ' + (classData.rows * classData.column) + '</span>';
+                  out += '  </div>';
+
+                  out += '  <div class="table-responsive p-3">';
+                  out += '    <table class="table table-bordered seating-table align-middle">';
+                  out += '      <thead>';
+                  out += '        <tr>';
+                  out += '          <th style="width: 20%;">Seat (Col A)</th>';
+                  out += '          <th style="width: 30%;">Candidate Roll No (Col A)</th>';
+                  out += '          <th style="width: 20%;">Seat (Col B)</th>';
+                  out += '          <th style="width: 30%;">Candidate Roll No (Col B)</th>';
+                  out += '        </tr>';
+                  out += '      </thead>';
+                  out += '      <tbody>';
+
+                  for (var z = 0; z < maxRows; z++) {
+                    var aData = classData.a && z < classData.a.length ? classData.a[z] : '-';
+                    var bData = classData.b && z < classData.b.length ? classData.b[z] : '-';
+
+                    out += '<tr>';
+                    out += '  <td><span class="seat-pill-a">A' + (z + 1) + '</span></td>';
+                    out += '  <td class="' + (aData !== '-' ? 'roll-bold' : 'text-muted') + '">' + aData + '</td>';
+                    out += '  <td><span class="seat-pill-b">B' + (z + 1) + '</span></td>';
+                    out += '  <td class="' + (bData !== '-' ? 'roll-bold' : 'text-muted') + '">' + bData + '</td>';
+                    out += '</tr>';
+                  }
+
+                  out += '      </tbody>';
+                  out += '    </table>';
+                  out += '  </div>';
+                  out += '</div>';
+                }
+              }
+
+              tablesContainer.innerHTML = (roomCount === 0) ? '<div class="alert alert-warning text-center">No students allocated for this session.</div>' : out;
+            } catch (e) {
+              tablesContainer.innerHTML = '<div class="alert alert-danger">Error rendering seating data: ' + e.message + '</div>';
+            }
+          } else {
+            tablesContainer.innerHTML = '<div class="alert alert-danger">Failed to fetch seating data.</div>';
+          }
+        };
+        xhr.send();
+      }
+    </script>
+  </body>
+</html>
