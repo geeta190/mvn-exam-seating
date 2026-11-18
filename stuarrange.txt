@@ -1,0 +1,212 @@
+[
+    {
+        "class_name": "Block 1 - Room 101",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 1 - Room 102",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 1 - Room 103",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 1 - Room 104",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 1 - Room 105",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 1 - Room 106",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 2 - Room 101",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 2 - Room 102",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 2 - Room 103",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 2 - Room 104",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 2 - Room 105",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 2 - Room 106",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 3 - Room 101",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 3 - Room 102",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 3 - Room 103",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 3 - Room 104",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 3 - Room 105",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 3 - Room 106",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 4 - Room 101",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 4 - Room 102",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 4 - Room 103",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 4 - Room 104",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 4 - Room 105",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 4 - Room 106",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 5 - Room 101",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 5 - Room 102",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 5 - Room 103",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 5 - Room 104",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 5 - Room 105",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 5 - Room 106",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 6 - Room 101",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 6 - Room 102",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 6 - Room 103",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 6 - Room 104",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 6 - Room 105",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 6 - Room 106",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 7 - Room 101",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 7 - Room 102",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 7 - Room 103",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 7 - Room 104",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 7 - Room 105",
+        "column": 6,
+        "rows": 7
+    },
+    {
+        "class_name": "Block 7 - Room 106",
+        "column": 6,
+        "rows": 7
+    }
+]
