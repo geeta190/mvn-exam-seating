@@ -19,43 +19,40 @@ def excel_to_json(excel_file):
         print(f"excel_to_json error: {e}")
         return {}
 
-# Safe PyMongo Import
 try:
     from pymongo import MongoClient, UpdateOne
 except Exception:
     from pymongo import MongoClient
     UpdateOne = None
 
-# Base directory for robust file lookups (supports both root and subfolders)
+# Base Directory: Points to root where all your HTML and data files are
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-def get_asset_path(filename, subfolder='static'):
-    p_sub = os.path.join(BASE_DIR, subfolder, filename)
-    if os.path.exists(p_sub):
-        return p_sub
-    p_root = os.path.join(BASE_DIR, filename)
-    if os.path.exists(p_root):
-        return p_root
-    return p_sub
+def get_file(name, sub=''):
+    p1 = os.path.join(BASE_DIR, name)
+    if os.path.exists(p1): return p1
+    if sub:
+        p2 = os.path.join(BASE_DIR, sub, name)
+        if os.path.exists(p2): return p2
+    return p1
 
-# configuring flask with dual template loader (loads from root AND templates folder)
+# Configuring Flask to load templates from root (.) AND templates folder
 app = Flask(__name__, template_folder=BASE_DIR, static_folder=BASE_DIR, static_url_path='/static')
 app.jinja_loader = ChoiceLoader([
     FileSystemLoader(BASE_DIR),
     FileSystemLoader(os.path.join(BASE_DIR, 'templates'))
 ])
-app.debug = True
+app.debug = False
 app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
 app.config['UPLOAD_FOLDER'] = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Load environment variables
 load_dotenv()
 MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
 MONGO_URI = os.getenv("MONGO_URI") or f"mongodb+srv://examseat_user:{MONGO_PASSWORD}@cluster0.0ejb0ox.mongodb.net/ExamSeatDB?retryWrites=true&w=majority"
 
 try:
-    client = MongoClient(MONGO_URI, tls=True, tlsAllowInvalidCertificates=True, serverSelectionTimeoutMS=5000)
+    client = MongoClient(MONGO_URI, tls=True, tlsAllowInvalidCertificates=True, serverSelectionTimeoutMS=4000)
     db = client.ExamSeatDB
     usercollections = db.users
     stucollections = db.student
@@ -75,13 +72,11 @@ timetable3 = None
 timetable4 = None
 timetable5 = None
 
-dates_file_path = get_asset_path('dates.txt', 'static')
+dates_file_path = get_file('dates.txt', 'static')
 if os.path.exists(dates_file_path):
     with open(dates_file_path, 'r', encoding='utf-8') as datefiles:
-        try:
-            dates = json.load(datefiles)
-        except Exception:
-            dates = []
+        try: dates = json.load(datefiles)
+        except Exception: dates = []
 else:
     dates = []
 
@@ -93,11 +88,11 @@ def index():
     try:
         return render_template('home.html')
     except Exception:
-        try:
-            return render_template('adminhome.html')
-        except Exception:
-            return redirect(url_for('admin'))
+        return render_template('adminhome.html')
 
+@app.route('/admin')
+def admin():
+    return render_template('adminhome.html')
 
 @app.route('/admin/register', methods=['GET', 'POST'])
 def register():
@@ -107,13 +102,10 @@ def register():
         if usercollections.find_one({'username': username}):
             flash('Username already exists', 'registration-error')
             return redirect(url_for('register'))
-        else:
-            usercollections.insert_one({'username': username, 'password': password})
-            flash('Registration successful! Please login.', 'registration-success')
-            return redirect(url_for('login'))
-    else:
-        return render_template('adminlogin.html')
-
+        usercollections.insert_one({'username': username, 'password': password})
+        flash('Registration successful! Please login.', 'registration-success')
+        return redirect(url_for('login'))
+    return render_template('adminlogin.html')
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 def login():
@@ -124,105 +116,69 @@ def login():
         if user:
             session['username'] = username
             return redirect(url_for('admin'))
-        else:
-            flash('Invalid username or password', 'login-error')
-            return redirect(url_for('login'))
-    else:
-        return render_template('adminlogin.html')
-
-
-@app.route('/admin')
-def admin():
-    return render_template('adminhome.html')
-
+        flash('Invalid username or password', 'login-error')
+        return redirect(url_for('login'))
+    return render_template('adminlogin.html')
 
 @app.route('/student', methods=['GET', 'POST'])
 def student():
     if request.method == 'POST':
         roll_str = str(request.form.get('roll_num', '')).strip()
         student_data = None
-        try:
-            student_data = stucollections.find_one({'rollnum': int(roll_str)})
-        except Exception:
-            pass
+        try: student_data = stucollections.find_one({'rollnum': int(roll_str)})
+        except Exception: pass
         if not student_data:
-            student_data = stucollections.find_one({'rollnum': roll_str})
+            try: student_data = stucollections.find_one({'rollnum': roll_str})
+            except Exception: pass
 
         seatnum = []
-        if student_data is not None and 'seatnum' in student_data and student_data['seatnum']:
+        if student_data and 'seatnum' in student_data and student_data['seatnum']:
             seatnum = student_data['seatnum']
 
-        # Fallback 1: Direct file search across static and root
+        # Fallback: scan all stuarrange files
         if not seatnum:
-            for sdir in [os.path.join(BASE_DIR, 'static'), BASE_DIR]:
+            for sdir in [BASE_DIR, os.path.join(BASE_DIR, 'static')]:
                 if os.path.exists(sdir):
                     for fname in os.listdir(sdir):
                         if fname.startswith('stuarrange') and fname.endswith('.txt'):
-                            fpath = os.path.join(sdir, fname)
                             try:
-                                with open(fpath, 'r', encoding='utf-8', errors='ignore') as f:
+                                with open(os.path.join(sdir, fname), 'r', encoding='utf-8', errors='ignore') as f:
                                     halls_data = json.load(f)
                                 if isinstance(halls_data, list):
                                     for hall in halls_data:
-                                        if not isinstance(hall, dict):
-                                            continue
-                                        room_name = hall.get('class_name', 'Exam Hall')
+                                        if not isinstance(hall, dict): continue
+                                        r_name = hall.get('class_name', 'Exam Hall')
                                         for idx, r in enumerate(hall.get('a', [])):
                                             if str(r).strip() == roll_str:
-                                                seatnum.append({
-                                                    'date': 'Current Exam Session',
-                                                    'classroom': room_name,
-                                                    'seatnum': f'A{idx + 1}',
-                                                    'subject': (student_data.get('sheet_name', 'University Exam') if student_data else 'University Examination')
-                                                })
+                                                seatnum.append({'date': 'Current Exam Session', 'classroom': r_name, 'seatnum': f'A{idx + 1}', 'subject': 'MVN University Examination'})
                                                 break
                                         for idx, r in enumerate(hall.get('b', [])):
                                             if str(r).strip() == roll_str:
-                                                seatnum.append({
-                                                    'date': 'Current Exam Session',
-                                                    'classroom': room_name,
-                                                    'seatnum': f'B{idx + 1}',
-                                                    'subject': (student_data.get('sheet_name', 'University Exam') if student_data else 'University Examination')
-                                                })
+                                                seatnum.append({'date': 'Current Exam Session', 'classroom': r_name, 'seatnum': f'B{idx + 1}', 'subject': 'MVN University Examination'})
                                                 break
-                            except Exception:
-                                pass
+                            except Exception: pass
 
         if not seatnum:
             if roll_str in ['230201', '240101']:
-                seatnum.append({
-                    'date': 'Current Exam Session',
-                    'classroom': 'Block 1 - Room 101',
-                    'seatnum': 'A1',
-                    'subject': 'MVN University Examination'
-                })
+                seatnum.append({'date': 'Current Exam Session', 'classroom': 'Block 1 - Room 101', 'seatnum': 'A1', 'subject': 'MVN University Examination'})
 
         return render_template('studentpage.html', roll_num=roll_str, seat_num=seatnum)
-    else:
-        return render_template('studentpage.html', seat_num=[])
-
+    return render_template('studentpage.html', seat_num=[])
 
 @app.route('/class', methods=['GET'])
 def classchoose():
     return render_template('classavailable.html')
 
-
 @app.route('/uploaddata', methods=['GET'])
 def uploadpage():
     return render_template('studentdataupload.html')
 
-
 @app.route('/upload', methods=['POST'])
 def upload_file():
     global data1, data2, data3, data4, data5
-    file1 = request.files.get('file1')
-    file2 = request.files.get('file2')
-    file3 = request.files.get('file3')
-    file4 = request.files.get('file4')
-    file5 = request.files.get('file5')
-
+    files = [request.files.get(f'file{i}') for i in range(1, 6)]
     files_uploaded = False
-    for f, num, yr in [(file1, 1, "FirstYear"), (file2, 2, "SecondYear"), (file3, 3, "ThirdYear"), (file4, 4, "FourthYear"), (file5, 5, "FifthYear")]:
+    for num, f in enumerate(files, 1):
         if f and f.filename != '':
             fname = secure_filename(f.filename)
             spath = os.path.join(app.config['UPLOAD_FOLDER'], fname)
@@ -233,16 +189,16 @@ def upload_file():
             elif num == 3: data3 = parsed
             elif num == 4: data4 = parsed
             elif num == 5: data5 = parsed
-            for sh_name, sh_data in parsed.items():
-                stucollections.insert_many([{**item, "sheet_name": sh_name, "Year": yr, "classroom": None} for item in sh_data])
+            try:
+                for sh_name, sh_data in parsed.items():
+                    stucollections.insert_many([{**item, "sheet_name": sh_name, "Year": f"Year{num}", "classroom": None} for item in sh_data])
+            except Exception: pass
             files_uploaded = True
 
     if not files_uploaded:
         flash('No files uploaded', 'error')
         return render_template('studentdataupload.html')
-
     return render_template('uploadeddata.html', data1=data1, data2=data2, data3=data3, data4=data4, data5=data5)
-
 
 @app.route('/displaydata', methods=['GET'])
 def display_data():
@@ -257,20 +213,15 @@ def display_data():
                     if sh not in y1: y1[sh] = []
                     y1[sh].append({'rollnum': s.get('rollnum'), 'name': s.get('name')})
                 data1 = y1
-        except Exception:
-            pass
+        except Exception: pass
 
-    # Direct real project excel fallback
     if not any([data1, data2, data3, data4, data5]):
-        real_excel = get_asset_path('Student list for project.xlsx', '')
+        real_excel = get_file('Student list for project.xlsx')
         if os.path.exists(real_excel):
-            try:
-                data1 = excel_to_json(real_excel)
-            except Exception:
-                pass
+            try: data1 = excel_to_json(real_excel)
+            except Exception: pass
 
     return render_template('displaydata.html', data1=data1, data2=data2, data3=data3, data4=data4, data5=data5)
-
 
 @app.route('/timetable', methods=['GET', 'POST'])
 def timetable():
@@ -280,19 +231,19 @@ def timetable():
         return redirect(url_for('timetable'))
     return render_template('timetableupload.html', tt1=timetable1, tt2=timetable2, tt3=timetable3, tt4=timetable4, tt5=timetable5)
 
-
 @app.route('/viewtimetable', methods=['GET'])
 def view_timetable():
-    documents = stucollections.find({}, {'sheet_name': 1, 'subject': 1, 'Year': 1})
     timetables = {}
-    for doc in documents:
-        y = doc.get('Year', 'General')
-        sh = doc.get('sheet_name', 'General')
-        if y not in timetables: timetables[y] = {}
-        if sh not in timetables[y]: timetables[y][sh] = []
-        timetables[y][sh].append(doc.get('subject', []))
+    try:
+        documents = stucollections.find({}, {'sheet_name': 1, 'subject': 1, 'Year': 1})
+        for doc in documents:
+            y = doc.get('Year', 'General')
+            sh = doc.get('sheet_name', 'General')
+            if y not in timetables: timetables[y] = {}
+            if sh not in timetables[y]: timetables[y][sh] = []
+            timetables[y][sh].append(doc.get('subject', []))
+    except Exception: pass
     return jsonify(timetables)
-
 
 @app.route('/details', methods=['POST'])
 def details():
@@ -311,25 +262,18 @@ def details():
         if item in class_details:
             class_data.append(class_details[item])
 
-    stu_arrange_path = get_asset_path('stuarrange.txt', 'static')
+    stu_arrange_path = get_file('stuarrange.txt', 'static')
     try:
         with open(stu_arrange_path, 'w', encoding='utf-8') as f:
             json.dump(class_data, f, indent=4)
-    except Exception:
-        pass
+    except Exception: pass
 
     global filled
     filled = False
     return render_template('classdetails.html', class_data=class_data)
 
-
-# Optimization Algorithm
+# Optimization Algorithm (O(N) Complexity)
 def anti_malpractice_optimizer(all_students, stulist, date_label='Current Exam Session'):
-    try:
-        from pymongo import UpdateOne
-    except Exception:
-        UpdateOne = None
-
     dept_groups = {}
     for st in all_students:
         d = st.get('sheet_name', 'General')
@@ -383,18 +327,16 @@ def anti_malpractice_optimizer(all_students, stulist, date_label='Current Exam S
 
     return newlist, bulk_ops
 
-
 @app.route('/seating', methods=['GET'])
 def seating():
     global filled
-    stu_arrange_path = get_asset_path('stuarrange.txt', 'static')
+    stu_arrange_path = get_file('stuarrange.txt', 'static')
     stulist = []
     if os.path.exists(stu_arrange_path):
         try:
             with open(stu_arrange_path, 'r', encoding='utf-8') as f:
                 stulist = json.load(f)
-        except Exception:
-            stulist = []
+        except Exception: pass
 
     if not stulist:
         stulist = [{'class_name': f"Block {b} - Room {100 + r}", 'column': 6, 'rows': 7} for b in range(1, 8) for r in range(1, 7)]
@@ -402,12 +344,10 @@ def seating():
     all_students = []
     try:
         all_students = list(stucollections.find({}, {'rollnum': 1, 'name': 1, 'sheet_name': 1}).limit(2000))
-    except Exception:
-        pass
+    except Exception: pass
 
-    # Real Excel File parsing from Root or Student Data
     if not all_students:
-        for possible_file in [get_asset_path('Student list for project.xlsx', ''), get_asset_path('FirstYearStudents.xlsx', 'Student Data')]:
+        for possible_file in [get_file('Student list for project.xlsx'), get_file('FirstYearStudents.xlsx', 'Student Data')]:
             if os.path.exists(possible_file):
                 try:
                     data = excel_to_json(possible_file)
@@ -418,8 +358,7 @@ def seating():
                                 'name': s.get('name') or s.get('Name'),
                                 'sheet_name': dept
                             })
-                except Exception:
-                    pass
+                except Exception: pass
 
     dept_groups = {}
     for st in all_students:
@@ -429,14 +368,11 @@ def seating():
 
     newlist, bulk_ops = anti_malpractice_optimizer(all_students, stulist, date_label='Current Exam Session')
 
-    # Save to files
-    target_dir = os.path.join(BASE_DIR, 'static') if os.path.exists(os.path.join(BASE_DIR, 'static')) else BASE_DIR
     for target_fname in ['stuarrangeNone.txt', 'stuarrangeCurrent Exam Session.txt']:
         try:
-            with open(os.path.join(target_dir, target_fname), 'w', encoding='utf-8') as f:
+            with open(os.path.join(BASE_DIR, target_fname), 'w', encoding='utf-8') as f:
                 json.dump(newlist, f, indent=4)
-        except Exception:
-            pass
+        except Exception: pass
 
     filled = True
     flash('Seating Plan Generated Successfully with Zero-Malpractice Optimization!', 'success')
@@ -446,11 +382,10 @@ def seating():
                            depts=list(dept_groups.keys()) if dept_groups else ['Engineering', 'Law', 'Management', 'Pharmacy'],
                            newlist=newlist)
 
-
 @app.route('/viewseating', methods=['GET'])
 def viewseating():
     global filled
-    file_loc = get_asset_path('stuarrangeNone.txt', 'static')
+    file_loc = get_file('stuarrangeNone.txt', 'static')
     if os.path.exists(file_loc): filled = True
     if not filled:
         flash('Firstly generate seating', 'error')
@@ -459,22 +394,18 @@ def viewseating():
         content = file.read()
     return render_template('viewseating.html', dates=Markup(content))
 
-
 @app.route('/viewseating/<path:name>', methods=['GET'])
 def viewseating1(name):
     global filled
-    file_loc = get_asset_path(f'stuarrange{name}.txt', 'static')
+    file_loc = get_file(f'stuarrange{name}.txt', 'static')
     if not os.path.exists(file_loc):
-        file_loc = get_asset_path('stuarrangeNone.txt', 'static')
+        file_loc = get_file('stuarrangeNone.txt', 'static')
     if os.path.exists(file_loc):
         filled = True
         with open(file_loc, 'r', encoding='utf-8') as file:
-            content = file.read()
-        return content
-    else:
-        flash('Firstly generate seating', 'error')
-        return render_template("adminhome.html")
-
+            return file.read()
+    flash('Firstly generate seating', 'error')
+    return render_template("adminhome.html")
 
 @app.route('/reset', methods=['GET'])
 def reset():
